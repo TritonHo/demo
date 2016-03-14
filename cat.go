@@ -104,20 +104,20 @@ func catUpdate(w http.ResponseWriter, r *http.Request) {
 	id := catRegexp.ReplaceAllString(r.URL.Path, "$1")
 
 	//since we have to know which field is updated, thus we need to use structure with pointer attribute
-	cat := struct {
+	input := struct {
 		Name   *string `json:"name"`
 		Gender *string `json:"gender"`
 	}{}
 
 	//bind the input
-	if err := json.NewDecoder(r.Body).Decode(&cat); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
 		return
 	}
 	//perform basic checking on gender
-	if cat.Gender != nil && *cat.Gender != `MALE` && *cat.Gender != `FEMALE` {
+	if input.Gender != nil && *input.Gender != `MALE` && *input.Gender != `FEMALE` {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error":"Gender must be MALE or FEMALE"}`))
@@ -127,13 +127,13 @@ func catUpdate(w http.ResponseWriter, r *http.Request) {
 	//build the SQL for partial update
 	columnNames := []string{}
 	values := []interface{}{}
-	if cat.Name != nil {
+	if input.Name != nil {
 		columnNames = append(columnNames, `name`)
-		values = append(values, cat.Name)
+		values = append(values, input.Name)
 	}
-	if cat.Gender != nil {
+	if input.Gender != nil {
 		columnNames = append(columnNames, `gender`)
-		values = append(values, cat.Gender)
+		values = append(values, input.Gender)
 	}
 	colNamePart := ``
 	for i, name := range columnNames {
