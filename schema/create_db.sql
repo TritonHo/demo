@@ -1,9 +1,9 @@
 /*
-	meow_admin is the database owner.
+	demo_admin is the database owner.
 	It owns all objects(table, trigger, etc) in the database.
 	Usually, it should be used ONLY when DBA wants to change the database schema.
 
-	meow_user is the account used by the golang executable.
+	demo_user is the account used by the golang executable.
 	Thus, it is NOT allowed to create / change / any object in database.
 	For normal table, only CURD privilege is granted, truncate table should NOT be granted.
 
