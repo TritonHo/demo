@@ -1,0 +1,16 @@
+//a centralized location to store the configration from the environment variable
+
+package setting
+
+//a centralized location containing all the configuration needed by the system.
+//so that it would avoid collusion of the config parameter name
+const (
+	DB_HOST     string = `DB_HOST`
+	DB_USERNAME string = `DB_USERNAME`
+	DB_NAME     string = `DB_NAME`
+	DB_PASSWORD string = `DB_PASSWORD`
+	DB_PORT     string = `DB_PORT`
+
+	DB_MAX_IDLE_CONN string = `DB_MAX_IDLE_CONN`
+	DB_MAX_OPEN_CONN string = `DB_MAX_OPEN_CONN`
+)

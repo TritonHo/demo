@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"database/sql"
@@ -12,7 +12,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-func catGetOne(w http.ResponseWriter, r *http.Request) {
+func CatGetOne(w http.ResponseWriter, r *http.Request) {
 	//create the object and get the Id from the URL
 	var cat model.Cat
 	cat.Id = mux.Vars(r)[`catId`]
@@ -34,7 +34,7 @@ func catGetOne(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func catGetAll(w http.ResponseWriter, r *http.Request) {
+func CatGetAll(w http.ResponseWriter, r *http.Request) {
 	//create the object slice
 	cats := []model.Cat{}
 
@@ -69,7 +69,7 @@ func catGetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(cats)
 }
 
-func catUpdate(w http.ResponseWriter, r *http.Request) {
+func CatUpdate(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)[`catId`]
 
 	//since we have to know which field is updated, thus we need to use structure with pointer attribute
@@ -128,7 +128,7 @@ func catUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func catCreate(w http.ResponseWriter, r *http.Request) {
+func CatCreate(w http.ResponseWriter, r *http.Request) {
 	//bind the input
 	cat := model.Cat{}
 	if err := json.NewDecoder(r.Body).Decode(&cat); err != nil {
@@ -166,7 +166,7 @@ func catCreate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func catDelete(w http.ResponseWriter, r *http.Request) {
+func CatDelete(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)[`catId`]
 
 	//perform the delete to the database
