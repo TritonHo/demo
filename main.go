@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"runtime"
@@ -12,6 +11,8 @@ import (
 	"demo/lib/config"
 	"demo/setting"
 
+	xormCore "github.com/go-xorm/core"
+	"github.com/go-xorm/xorm"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
@@ -50,10 +51,17 @@ func initDependency() {
 		" password='" + config.GetStr(setting.DB_PASSWORD) + "'" +
 		" sslmode=disable"
 
-	db, err := sql.Open("postgres", connectStr)
+	db, err := xorm.NewEngine("postgres", connectStr)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("DB connection initialization failed", err)
 	}
+
+	db.SetMaxIdleConns(config.GetInt(setting.DB_MAX_IDLE_CONN))
+	db.SetMaxOpenConns(config.GetInt(setting.DB_MAX_OPEN_CONN))
+	db.SetColumnMapper(xormCore.SnakeMapper{})
+	//uncomment it if you want to debug
+	//db.ShowSQL = true
+	//db.ShowErr = true
 
 	handler.Init(db)
 }

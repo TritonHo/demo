@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"demo/model"
 
@@ -18,19 +16,20 @@ func CatGetOne(w http.ResponseWriter, r *http.Request) {
 	cat.Id = mux.Vars(r)[`catId`]
 
 	//load the object data from the database
-	err := db.QueryRow(`SELECT name, gender, create_time, update_time FROM cats WHERE id = $1::uuid`, cat.Id).Scan(&cat.Name, &cat.Gender, &cat.CreateTime, &cat.UpdateTime)
+	found, err := db.Id(cat.Id).Get(&cat)
 
 	//perform the object, or any error
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	switch err {
-	case sql.ErrNoRows:
-		w.WriteHeader(http.StatusNotFound)
-	case nil:
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(cat)
-	default:
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+	} else {
+		if found == false {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cat)
+		}
 	}
 }
 
@@ -39,25 +38,9 @@ func CatGetAll(w http.ResponseWriter, r *http.Request) {
 	cats := []model.Cat{}
 
 	//load the object data from the database
-	rows, err := db.Query("SELECT id, name, gender, create_time, update_time FROM cats order by id desc")
+	err := db.Find(&cats)
+
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-		return
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var cat model.Cat
-		if err := rows.Scan(&cat.Id, &cat.Name, &cat.Gender, &cat.CreateTime, &cat.UpdateTime); err != nil {
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-			return
-		}
-		cats = append(cats, cat)
-	}
-	if err := rows.Err(); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
@@ -94,26 +77,20 @@ func CatUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//build the SQL for partial update
+	//to understand which attribute need update, and build the cat object
+	cat := model.Cat{Id: id}
 	columnNames := []string{}
-	values := []interface{}{}
 	if input.Name != nil {
+		cat.Name = *input.Name
 		columnNames = append(columnNames, `name`)
-		values = append(values, input.Name)
 	}
 	if input.Gender != nil {
+		cat.Gender = *input.Gender
 		columnNames = append(columnNames, `gender`)
-		values = append(values, input.Gender)
 	}
-	colNamePart := ``
-	for i, name := range columnNames {
-		colNamePart = colNamePart + name + ` = $` + strconv.Itoa(i+1) + `, `
-	}
-	q := `UPDATE cats SET ` + colNamePart[0:len(colNamePart)-2] + ` WHERE id = $` + strconv.Itoa(len(columnNames)+1)
-	values = append(values, id)
 
 	//perform the update to the database
-	result, err := db.Exec(q, values...)
+	affected, err := db.Where("id = ?", id).Cols(columnNames...).Update(&cat)
 
 	//output the result
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -121,7 +98,7 @@ func CatUpdate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
 	} else {
-		if affected, _ := result.RowsAffected(); affected == 0 {
+		if affected == 0 {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
@@ -150,7 +127,7 @@ func CatCreate(w http.ResponseWriter, r *http.Request) {
 	cat.Id = uuid.NewV4().String()
 
 	//perform the create to the database
-	_, err := db.Exec(`insert into cats(id, name, gender) values ($1, $2, $3)`, cat.Id, cat.Name, cat.Gender)
+	_, err := db.Insert(&cat)
 
 	//output the result
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -160,7 +137,6 @@ func CatCreate(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"id":"` + cat.Id + `"}`))
-
 	}
 }
 
@@ -168,7 +144,7 @@ func CatDelete(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)[`catId`]
 
 	//perform the delete to the database
-	result, err := db.Exec(`delete from cats WHERE id = $1`, id)
+	affected, err := db.Id(id).Insert(new(model.Cat))
 
 	//output the result
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -176,7 +152,7 @@ func CatDelete(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
 	} else {
-		if affected, _ := result.RowsAffected(); affected == 0 {
+		if affected == 0 {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			w.WriteHeader(http.StatusNoContent)

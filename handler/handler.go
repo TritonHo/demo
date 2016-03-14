@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"database/sql"
+	"github.com/go-xorm/xorm"
 )
 
 var (
-	db *sql.DB
+	db *xorm.Engine
 )
 
-func Init(database *sql.DB) {
+func Init(database *xorm.Engine) {
 	db = database
 }
