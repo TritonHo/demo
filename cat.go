@@ -4,43 +4,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"demo/model"
 
+	"github.com/gorilla/mux"
 	"github.com/satori/go.uuid"
 )
-
-var uuidRegexp string = `[[:alnum:]]{8}-[[:alnum:]]{4}-4[[:alnum:]]{3}-[89AaBb][[:alnum:]]{3}-[[:alnum:]]{12}`
-var catRegexp *regexp.Regexp = regexp.MustCompile("^/v1/cats/(" + uuidRegexp + ")$")
-
-func catHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		if r.URL.Path == `/v1/cats/` {
-			catGetAll(w, r)
-		} else {
-			catGetOne(w, r)
-		}
-	case "PUT", "PATCH":
-		catUpdate(w, r)
-	case "POST":
-		catCreate(w, r)
-	case "DELETE":
-		catDelete(w, r)
-	}
-}
 
 func catGetOne(w http.ResponseWriter, r *http.Request) {
 	//create the object and get the Id from the URL
 	var cat model.Cat
-	if catRegexp.MatchString(r.URL.Path) == false {
-		//unmatched URL, directly return HTTP 404
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	cat.Id = catRegexp.ReplaceAllString(r.URL.Path, "$1")
+	cat.Id = mux.Vars(r)[`catId`]
 
 	//load the object data from the database
 	err := db.QueryRow(`SELECT name, gender, create_time, update_time FROM cats WHERE id = $1::uuid`, cat.Id).Scan(&cat.Name, &cat.Gender, &cat.CreateTime, &cat.UpdateTime)
@@ -95,12 +70,7 @@ func catGetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func catUpdate(w http.ResponseWriter, r *http.Request) {
-	if catRegexp.MatchString(r.URL.Path) == false {
-		//unmatched URL, directly return HTTP 404
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	id := catRegexp.ReplaceAllString(r.URL.Path, "$1")
+	id := mux.Vars(r)[`catId`]
 
 	//since we have to know which field is updated, thus we need to use structure with pointer attribute
 	cat := struct {
@@ -197,12 +167,7 @@ func catCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func catDelete(w http.ResponseWriter, r *http.Request) {
-	if catRegexp.MatchString(r.URL.Path) == false {
-		//unmatched URL, directly return HTTP 404
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	id := catRegexp.ReplaceAllString(r.URL.Path, "$1")
+	id := mux.Vars(r)[`catId`]
 
 	//perform the delete to the database
 	result, err := db.Exec(`delete from cats WHERE id = $1`, id)

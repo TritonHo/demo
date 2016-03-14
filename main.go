@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"net/http"
 	"runtime"
-	//	"strconv"
 	"time"
 
 	"log"
 
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
@@ -22,9 +22,16 @@ func main() {
 	//in old go compiler, it is a must to enable multithread processing
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	//http.HandleFunc(pattern string, handler func(ResponseWriter, *Request))
-	http.HandleFunc(`/v1/cats/`, catHandler)
+	router := mux.NewRouter()
+	uuidRegexp := `[[:alnum:]]{8}-[[:alnum:]]{4}-4[[:alnum:]]{3}-[89AaBb][[:alnum:]]{3}-[[:alnum:]]{12}`
 
+	router.HandleFunc("/v1/cats/", catGetAll).Methods("GET")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", catGetOne).Methods("GET")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", catUpdate).Methods("PUT")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", catDelete).Methods("DELETE")
+	router.HandleFunc("/v1/cats/", catCreate).Methods("POST")
+
+	http.Handle("/", router)
 	s := &http.Server{
 		Addr:         ":8080",
 		ReadTimeout:  10 * time.Second,
