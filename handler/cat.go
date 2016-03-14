@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"demo/lib/httputil"
 	"demo/model"
 
 	"github.com/gorilla/mux"
@@ -56,37 +57,28 @@ func CatGetAll(w http.ResponseWriter, r *http.Request) {
 func CatUpdate(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)[`catId`]
 
-	//since we have to know which field is updated, thus we need to use structure with pointer attribute
-	input := struct {
-		Name   *string `json:"name"`
-		Gender *string `json:"gender"`
-	}{}
-
+	//perform the input binding
+	cat := model.Cat{}
+	dbUpdateFields, updateFields, err := httputil.BindForUpdate(r, &cat)
 	//bind the input
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
 		return
 	}
 	//perform basic checking on gender
-	if input.Gender != nil && *input.Gender != `MALE` && *input.Gender != `FEMALE` {
+	if _, ok := updateFields[`Gender`]; ok && cat.Gender != `MALE` && cat.Gender != `FEMALE` {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error":"Gender must be MALE or FEMALE"}`))
 		return
 	}
 
-	//to understand which attribute need update, and build the cat object
-	cat := model.Cat{Id: id}
+	//convert the columnName map into string slice
 	columnNames := []string{}
-	if input.Name != nil {
-		cat.Name = *input.Name
-		columnNames = append(columnNames, `name`)
-	}
-	if input.Gender != nil {
-		cat.Gender = *input.Gender
-		columnNames = append(columnNames, `gender`)
+	for k, _ := range dbUpdateFields {
+		columnNames = append(columnNames, k)
 	}
 
 	//perform the update to the database
@@ -109,7 +101,7 @@ func CatUpdate(w http.ResponseWriter, r *http.Request) {
 func CatCreate(w http.ResponseWriter, r *http.Request) {
 	//bind the input
 	cat := model.Cat{}
-	if err := json.NewDecoder(r.Body).Decode(&cat); err != nil {
+	if err := httputil.Bind(r, &cat); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))

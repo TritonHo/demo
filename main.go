@@ -9,6 +9,7 @@ import (
 
 	"demo/handler"
 	"demo/lib/config"
+	"demo/lib/httputil"
 	"demo/setting"
 
 	xormCore "github.com/go-xorm/core"
@@ -62,6 +63,8 @@ func initDependency() {
 	//uncomment it if you want to debug
 	//db.ShowSQL = true
 	//db.ShowErr = true
+
+	httputil.Init(xormCore.SnakeMapper{})
 
 	handler.Init(db)
 }
