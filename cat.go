@@ -38,6 +38,7 @@ func catGetAll(w http.ResponseWriter, r *http.Request) {
 	//create the object slice
 	cats := []model.Cat{}
 
+	//load the object data from the database
 	rows, err := db.Query("SELECT id, name, gender, create_time, update_time FROM cats order by id desc")
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -149,7 +150,7 @@ func catCreate(w http.ResponseWriter, r *http.Request) {
 	cat.Id = uuid.NewV4().String()
 
 	//perform the create to the database
-	result, err := db.Exec(`insert into cats(id, name, gender) values ($1, $2, $3)`, cat.Id, cat.Name, cat.Gender)
+	_, err := db.Exec(`insert into cats(id, name, gender) values ($1, $2, $3)`, cat.Id, cat.Name, cat.Gender)
 
 	//output the result
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -157,12 +158,9 @@ func catCreate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
 	} else {
-		if affected, _ := result.RowsAffected(); affected == 0 {
-			w.WriteHeader(http.StatusNotFound)
-		} else {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"id":"` + cat.Id + `"}`))
-		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"id":"` + cat.Id + `"}`))
+
 	}
 }
 
