@@ -6,7 +6,7 @@ type Cat struct {
 	Id string `xorm:"pk" json:"id"`
 
 	Name   string `json:"name"`
-	Gender string `json:"gender"`
+	Gender string `json:"gender" validate:"required,enum=MALE/FEMALE"`
 
 	CreateTime time.Time `json:"createTime"`
 	UpdateTime time.Time `json:"updateTime"`

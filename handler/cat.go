@@ -59,19 +59,12 @@ func CatUpdate(w http.ResponseWriter, r *http.Request) {
 
 	//perform the input binding
 	cat := model.Cat{}
-	dbUpdateFields, updateFields, err := httputil.BindForUpdate(r, &cat)
+	dbUpdateFields, _, err := httputil.BindForUpdate(r, &cat)
 	//bind the input
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-		return
-	}
-	//perform basic checking on gender
-	if _, ok := updateFields[`Gender`]; ok && cat.Gender != `MALE` && cat.Gender != `FEMALE` {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"Gender must be MALE or FEMALE"}`))
 		return
 	}
 
@@ -105,13 +98,6 @@ func CatCreate(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-		return
-	}
-	//perform basic checking on gender
-	if cat.Gender != `MALE` && cat.Gender != `FEMALE` {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"Gender must be MALE or FEMALE"}`))
 		return
 	}
 

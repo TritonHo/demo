@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"demo/lib/validate"
+
 	xormCore "github.com/go-xorm/core"
 )
 
@@ -24,7 +26,8 @@ func Bind(r *http.Request, obj interface{}) error {
 		return err
 	}
 
-	return nil
+	//perform basic validation on the input
+	return validate.ValidateStructForCreate(obj)
 }
 
 //Only work for json/form input currently, not work for xml
@@ -51,7 +54,7 @@ func BindForUpdate(r *http.Request, obj interface{}) (dbFieldNames map[string]bo
 	}
 
 	dbFieldNames, fieldNames = convertToFieldName(obj, keys)
-	return dbFieldNames, fieldNames, nil
+	return dbFieldNames, fieldNames, validate.ValidateStructForUpdate(obj, fieldNames)
 }
 
 func GetXormColName(field *reflect.StructField) string {
@@ -92,7 +95,7 @@ func convertToFieldName(obj interface{}, jsonFieldName []string) (dbFieldNames m
 		fieldType := immutableType.Field(i)
 		jsonName := getJsonTagName(&fieldType)
 
-		if field.CanSet() && jsonName != `` {
+		if field.CanSet() && containValidateTag(&fieldType, []string{`fixed`, `zerotime`}) == false && jsonName != `` {
 			m1[jsonName] = GetXormColName(&fieldType)
 			m2[jsonName] = fieldType.Name
 		}
@@ -110,7 +113,30 @@ func convertToFieldName(obj interface{}, jsonFieldName []string) (dbFieldNames m
 	}
 	return dbFieldsOutput, structFieldsOutput
 }
+func containValidateTag(field *reflect.StructField, validateTag []string) bool {
+	t0 := field.Tag.Get(validate.ValidatorTag)
+	t1Slice := strings.Split(t0, validate.TagSeparator)
 
+	for _, t1 := range t1Slice {
+		t2Slice := strings.Split(t1, validate.OrSeparator)
+		for _, t2 := range t2Slice {
+			t3Slice := strings.Split(t2, validate.TagKeySeparator)
+			//t3 is the tag, already delimited by ",", "|", "="
+			t3 := t3Slice[0]
+
+			//remove the leading and tailing space
+			tag := strings.Trim(t3, " ")
+
+			for _, v := range validateTag {
+				if tag == v {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
 func getJsonTagName(field *reflect.StructField) string {
 	if tag := field.Tag.Get(`json`); tag != `` {
 		ss := strings.SplitN(tag, `,`, 2)
