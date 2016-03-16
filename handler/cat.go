@@ -18,7 +18,7 @@ func CatGetOne(w http.ResponseWriter, r *http.Request) {
 	//load the object data from the database
 	found, err := db.Id(cat.Id).Get(&cat)
 
-	//perform the object, or any error
+	//output the object, or any error
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
