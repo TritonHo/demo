@@ -1,40 +1,38 @@
 package handler
 
 import (
-	"encoding/json"
+	"errors"
 	"net/http"
 
 	"demo/lib/httputil"
 	"demo/model"
 
-	"github.com/gorilla/mux"
 	"github.com/satori/go.uuid"
 )
 
-func CatGetOne(w http.ResponseWriter, r *http.Request) {
+var errNotFound = errors.New("The record is not found.")
+
+func CatGetOne(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
 	//create the object and get the Id from the URL
 	var cat model.Cat
-	cat.Id = mux.Vars(r)[`catId`]
+	cat.Id = urlValues[`catId`]
 
 	//load the object data from the database
 	found, err := db.Id(cat.Id).Get(&cat)
 
 	//output the object, or any error
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+		return http.StatusInternalServerError, err, nil
 	} else {
 		if found == false {
-			w.WriteHeader(http.StatusNotFound)
+			return http.StatusNotFound, errNotFound, nil
 		} else {
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(cat)
+			return http.StatusOK, nil, cat
 		}
 	}
 }
 
-func CatGetAll(w http.ResponseWriter, r *http.Request) {
+func CatGetAll(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
 	//create the object slice
 	cats := []model.Cat{}
 
@@ -42,30 +40,22 @@ func CatGetAll(w http.ResponseWriter, r *http.Request) {
 	err := db.Find(&cats)
 
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-		return
+		return http.StatusInternalServerError, err, nil
 	}
 
 	//output the result
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(cats)
+	return http.StatusOK, nil, cats
 }
 
-func CatUpdate(w http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)[`catId`]
+func CatUpdate(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
+	id := urlValues[`catId`]
 
 	//perform the input binding
 	cat := model.Cat{}
 	dbUpdateFields, _, err := httputil.BindForUpdate(r, &cat)
 	//bind the input
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-		return
+		return http.StatusBadRequest, err, nil
 	}
 
 	//convert the columnName map into string slice
@@ -78,27 +68,22 @@ func CatUpdate(w http.ResponseWriter, r *http.Request) {
 	affected, err := db.Where("id = ?", id).Cols(columnNames...).Update(&cat)
 
 	//output the result
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+		return http.StatusInternalServerError, err, nil
 	} else {
 		if affected == 0 {
-			w.WriteHeader(http.StatusNotFound)
+			return http.StatusNotFound, errNotFound, nil
 		} else {
-			w.WriteHeader(http.StatusNoContent)
+			return http.StatusNoContent, nil, nil
 		}
 	}
 }
 
-func CatCreate(w http.ResponseWriter, r *http.Request) {
+func CatCreate(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
 	//bind the input
 	cat := model.Cat{}
 	if err := httputil.Bind(r, &cat); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-		return
+		return http.StatusBadRequest, err, nil
 	}
 
 	//generate the primary key for the cat
@@ -108,32 +93,27 @@ func CatCreate(w http.ResponseWriter, r *http.Request) {
 	_, err := db.Insert(&cat)
 
 	//output the result
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+		return http.StatusInternalServerError, err, nil
 	} else {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"id":"` + cat.Id + `"}`))
+		return http.StatusOK, nil, map[string]string{"Id": cat.Id}
 	}
 }
 
-func CatDelete(w http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)[`catId`]
+func CatDelete(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
+	id := urlValues[`catId`]
 
 	//perform the delete to the database
 	affected, err := db.Id(id).Delete(new(model.Cat))
 
 	//output the result
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"` + err.Error() + `"}`))
+		return http.StatusInternalServerError, err, nil
 	} else {
 		if affected == 0 {
-			w.WriteHeader(http.StatusNotFound)
+			return http.StatusNotFound, errNotFound, nil
 		} else {
-			w.WriteHeader(http.StatusNoContent)
+			return http.StatusNoContent, nil, nil
 		}
 	}
 }

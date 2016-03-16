@@ -10,6 +10,7 @@ import (
 	"demo/handler"
 	"demo/lib/config"
 	"demo/lib/httputil"
+	"demo/lib/middleware"
 	"demo/setting"
 
 	xormCore "github.com/go-xorm/core"
@@ -27,11 +28,11 @@ func main() {
 	router := mux.NewRouter()
 	uuidRegexp := `[[:alnum:]]{8}-[[:alnum:]]{4}-4[[:alnum:]]{3}-[89AaBb][[:alnum:]]{3}-[[:alnum:]]{12}`
 
-	router.HandleFunc("/v1/cats/", handler.CatGetAll).Methods("GET")
-	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatGetOne).Methods("GET")
-	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatUpdate).Methods("PUT")
-	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", handler.CatDelete).Methods("DELETE")
-	router.HandleFunc("/v1/cats/", handler.CatCreate).Methods("POST")
+	router.HandleFunc("/v1/cats/", middleware.Wrap(handler.CatGetAll)).Methods("GET")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", middleware.Wrap(handler.CatGetOne)).Methods("GET")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", middleware.Wrap(handler.CatUpdate)).Methods("PUT")
+	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", middleware.Wrap(handler.CatDelete)).Methods("DELETE")
+	router.HandleFunc("/v1/cats/", middleware.Wrap(handler.CatCreate)).Methods("POST")
 
 	http.Handle("/", router)
 	s := &http.Server{
