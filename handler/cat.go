@@ -7,18 +7,19 @@ import (
 	"demo/lib/httputil"
 	"demo/model"
 
+	"github.com/go-xorm/xorm"
 	"github.com/satori/go.uuid"
 )
 
 var errNotFound = errors.New("The record is not found.")
 
-func CatGetOne(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
+func CatGetOne(r *http.Request, urlValues map[string]string, session *xorm.Session) (int, error, interface{}) {
 	//create the object and get the Id from the URL
 	var cat model.Cat
 	cat.Id = urlValues[`catId`]
 
 	//load the object data from the database
-	found, err := db.Id(cat.Id).Get(&cat)
+	found, err := session.Id(cat.Id).Get(&cat)
 
 	//output the object, or any error
 	if err != nil {
@@ -32,12 +33,12 @@ func CatGetOne(r *http.Request, urlValues map[string]string) (int, error, interf
 	}
 }
 
-func CatGetAll(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
+func CatGetAll(r *http.Request, urlValues map[string]string, session *xorm.Session) (int, error, interface{}) {
 	//create the object slice
 	cats := []model.Cat{}
 
 	//load the object data from the database
-	err := db.Find(&cats)
+	err := session.Find(&cats)
 
 	if err != nil {
 		return http.StatusInternalServerError, err, nil
@@ -47,7 +48,7 @@ func CatGetAll(r *http.Request, urlValues map[string]string) (int, error, interf
 	return http.StatusOK, nil, cats
 }
 
-func CatUpdate(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
+func CatUpdate(r *http.Request, urlValues map[string]string, session *xorm.Session) (int, error, interface{}) {
 	id := urlValues[`catId`]
 
 	//perform the input binding
@@ -65,7 +66,7 @@ func CatUpdate(r *http.Request, urlValues map[string]string) (int, error, interf
 	}
 
 	//perform the update to the database
-	affected, err := db.Where("id = ?", id).Cols(columnNames...).Update(&cat)
+	affected, err := session.Where("id = ?", id).Cols(columnNames...).Update(&cat)
 
 	//output the result
 	if err != nil {
@@ -79,7 +80,7 @@ func CatUpdate(r *http.Request, urlValues map[string]string) (int, error, interf
 	}
 }
 
-func CatCreate(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
+func CatCreate(r *http.Request, urlValues map[string]string, session *xorm.Session) (int, error, interface{}) {
 	//bind the input
 	cat := model.Cat{}
 	if err := httputil.Bind(r, &cat); err != nil {
@@ -90,7 +91,7 @@ func CatCreate(r *http.Request, urlValues map[string]string) (int, error, interf
 	cat.Id = uuid.NewV4().String()
 
 	//perform the create to the database
-	_, err := db.Insert(&cat)
+	_, err := session.Insert(&cat)
 
 	//output the result
 	if err != nil {
@@ -100,11 +101,11 @@ func CatCreate(r *http.Request, urlValues map[string]string) (int, error, interf
 	}
 }
 
-func CatDelete(r *http.Request, urlValues map[string]string) (int, error, interface{}) {
+func CatDelete(r *http.Request, urlValues map[string]string, session *xorm.Session) (int, error, interface{}) {
 	id := urlValues[`catId`]
 
 	//perform the delete to the database
-	affected, err := db.Id(id).Delete(new(model.Cat))
+	affected, err := session.Id(id).Delete(new(model.Cat))
 
 	//output the result
 	if err != nil {

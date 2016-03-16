@@ -67,5 +67,5 @@ func initDependency() {
 
 	httputil.Init(xormCore.SnakeMapper{})
 
-	handler.Init(db)
+	middleware.Init(db)
 }

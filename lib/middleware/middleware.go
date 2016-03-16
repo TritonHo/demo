@@ -4,10 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-xorm/xorm"
 	"github.com/gorilla/mux"
 )
 
-type Handler func(r *http.Request, urlValues map[string]string) (statusCode int, err error, output interface{})
+var (
+	db *xorm.Engine
+)
+
+func Init(database *xorm.Engine) {
+	db = database
+}
+
+type Handler func(r *http.Request, urlValues map[string]string, session *xorm.Session) (statusCode int, err error, output interface{})
 
 //type PlainHandler func(res http.ResponseWriter, req *http.Request, urlValues map[string]string)
 
@@ -25,9 +34,24 @@ func SendResponse(res http.ResponseWriter, statusCode int, data interface{}) {
 // a middleware to handle user authorization
 func Wrap(f Handler) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		if statusCode, err, output := f(req, mux.Vars(req)); err == nil {
-			SendResponse(res, statusCode, output)
+		//prepare a database session for the handler
+		session := db.NewSession()
+		if err := session.Begin(); err != nil {
+			SendResponse(res, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		defer session.Close()
+
+		//everything seems fine, goto the business logic handler
+		if statusCode, err, output := f(req, mux.Vars(req), session); err == nil {
+			//the business logic handler return no error, then try to commit the db session
+			if err := session.Commit(); err != nil {
+				SendResponse(res, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			} else {
+				SendResponse(res, statusCode, output)
+			}
 		} else {
+			session.Rollback()
 			SendResponse(res, statusCode, map[string]string{"error": err.Error()})
 		}
 	}
