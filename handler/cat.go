@@ -136,7 +136,7 @@ func CatDelete(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)[`catId`]
 
 	//perform the delete to the database
-	affected, err := db.Id(id).Insert(new(model.Cat))
+	affected, err := db.Id(id).Delete(new(model.Cat))
 
 	//output the result
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
