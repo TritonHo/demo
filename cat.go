@@ -20,7 +20,7 @@ func catGetOne(w http.ResponseWriter, r *http.Request) {
 	//load the object data from the database
 	err := db.QueryRow(`SELECT name, gender, create_time, update_time FROM cats WHERE id = $1::uuid`, cat.Id).Scan(&cat.Name, &cat.Gender, &cat.CreateTime, &cat.UpdateTime)
 
-	//perform the object, or any error
+	//output the object, or any error
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	switch err {
 	case sql.ErrNoRows:
