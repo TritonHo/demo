@@ -76,35 +76,51 @@ func GetXormColName(field *reflect.StructField) string {
 	return columnNameMapper.Obj2Table(field.Name)
 }
 
-//it accept the json field name, add use the structure json tag, to locate the structField name
-func convertToFieldName(obj interface{}, jsonFieldName []string) (dbFieldNames map[string]bool, structFieldNames map[string]bool) {
+//dbNameMap =  jsonName --> dbFieldName
+//fieldNameMap =  jsonName --> fieldName
+func getJsonTagMapping(obj interface{}) (dbNameMap map[string]string, fieldNameMap map[string]string) {
 	//assumed a pointer will be passed
 	immutable := reflect.ValueOf(obj).Elem()
 	immutableType := immutable.Type()
-
-	//the mapping between jsonName and dbFieldName
-	m1 := map[string]string{}
-	//the mapping between jsonName and fieldName
-	m2 := map[string]string{}
+	dbNameMap = map[string]string{}
+	fieldNameMap = map[string]string{}
 
 	for i := 0; i < immutable.NumField(); i++ {
 		field := immutable.Field(i)
 		fieldType := immutableType.Field(i)
 		jsonName := getJsonTagName(&fieldType)
 
-		if field.CanSet() && jsonName != `` {
-			m1[jsonName] = GetXormColName(&fieldType)
-			m2[jsonName] = fieldType.Name
+		if fieldType.Anonymous {
+			//it is anonymous field, simply recursive dive in
+			v := field.Addr().Interface()
+			subDb, subField := getJsonTagMapping(v)
+			for k, v := range subDb {
+				dbNameMap[k] = v
+			}
+			for k, v := range subField {
+				fieldNameMap[k] = v
+			}
+		} else {
+			if field.CanSet() && jsonName != `` {
+				dbNameMap[jsonName] = GetXormColName(&fieldType)
+				fieldNameMap[jsonName] = fieldType.Name
+			}
 		}
 	}
+	return dbNameMap, fieldNameMap
+}
+
+//it accept the json field name, add use the structure json tag, to locate the structField name
+func convertToFieldName(obj interface{}, jsonFieldName []string) (dbFieldNames map[string]bool, structFieldNames map[string]bool) {
+	dbNameMap, fieldNameMap := getJsonTagMapping(obj)
 
 	dbFieldsOutput := map[string]bool{}
 	structFieldsOutput := map[string]bool{}
 	for _, s := range jsonFieldName {
-		if dbFieldName, ok := m1[s]; ok && dbFieldName != `` {
+		if dbFieldName, ok := dbNameMap[s]; ok && dbFieldName != `` {
 			dbFieldsOutput[dbFieldName] = true
 		}
-		if fieldName, ok := m2[s]; ok {
+		if fieldName, ok := fieldNameMap[s]; ok {
 			structFieldsOutput[fieldName] = true
 		}
 	}
