@@ -34,8 +34,8 @@ func main() {
 
 	router.HandleFunc("/v1/auth/", middleware.Plain(handler.Login)).Methods("POST")
 
-	//	router.HandleFunc("/v1/user", middleware.Plain(handler.UserCreate)).Methods("POST")
-	//	router.HandleFunc("/v1/user", middleware.Plain(handler.UserUpdate)).Methods("PUT")
+	router.HandleFunc("/v1/users/", middleware.Plain(handler.UserCreate)).Methods("POST")
+	//	router.HandleFunc("/v1/users/", middleware.Plain(handler.UserUpdate)).Methods("PUT")
 
 	router.HandleFunc("/v1/cats/", middleware.Wrap(handler.CatGetAll)).Methods("GET")
 	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", middleware.Wrap(handler.CatGetOne)).Methods("GET")
