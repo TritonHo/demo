@@ -1,0 +1,2 @@
+ALTER TABLE cats ADD CONSTRAINT cats_fk1 FOREIGN KEY (user_id) REFERENCES users (id) MATCH FULL;
+

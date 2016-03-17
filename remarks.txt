@@ -1,0 +1,10 @@
+
+To generate a rsa cert for jwt:
+
+https://en.wikibooks.org/wiki/Cryptography/Generate_a_keypair_using_OpenSSL
+
+To generate the RSA key pair
+openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
+
+To generate the public key from private key
+openssl rsa -in private_key.pem -pubout

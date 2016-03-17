@@ -13,4 +13,10 @@ const (
 
 	DB_MAX_IDLE_CONN string = `DB_MAX_IDLE_CONN`
 	DB_MAX_OPEN_CONN string = `DB_MAX_OPEN_CONN`
+
+	JWT_RSA_KEY_LOCATION     string = `JWT_RSA_KEY_LOCATION`
+	JWT_OLD_RSA_KEY_LOCATION string = `JWT_OLD_RSA_KEY_LOCATION`
+
+	//measured in minute, the lifetime of the issued jwt token
+	JWT_TOKEN_LIFETIME string = `JWT_TOKEN_LIFETIME`
 )

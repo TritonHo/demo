@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"demo/lib/auth"
+
 	"github.com/go-xorm/xorm"
 	"github.com/gorilla/mux"
 )
@@ -16,9 +18,8 @@ func Init(database *xorm.Engine) {
 	db = database
 }
 
-type Handler func(r *http.Request, urlValues map[string]string, session *xorm.Session) (statusCode int, err error, output interface{})
-
-//type PlainHandler func(res http.ResponseWriter, req *http.Request, urlValues map[string]string)
+type Handler func(r *http.Request, urlValues map[string]string, session *xorm.Session, userId string) (statusCode int, err error, output interface{})
+type PlainHandler func(res http.ResponseWriter, req *http.Request, urlValues map[string]string, db *xorm.Engine)
 
 // send a http response to the user with JSON format
 func SendResponse(res http.ResponseWriter, statusCode int, data interface{}) {
@@ -34,6 +35,20 @@ func SendResponse(res http.ResponseWriter, statusCode int, data interface{}) {
 // a middleware to handle user authorization
 func Wrap(f Handler) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		userId, err := auth.Verify(req.Header.Get("Authorization"))
+		if err != nil {
+			SendResponse(res, http.StatusUnauthorized, map[string]string{"error": err.Error()})
+			return
+		} else {
+			//please think carefully on this design, as it has potential security problem
+			if newToken, err := auth.Sign(userId); err != nil {
+				SendResponse(res, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			} else {
+				res.Header().Add("Authorization", newToken) // update JWT Token
+			}
+		}
+
 		//prepare a database session for the handler
 		session := db.NewSession()
 		if err := session.Begin(); err != nil {
@@ -43,7 +58,7 @@ func Wrap(f Handler) http.HandlerFunc {
 		defer session.Close()
 
 		//everything seems fine, goto the business logic handler
-		if statusCode, err, output := f(req, mux.Vars(req), session); err == nil {
+		if statusCode, err, output := f(req, mux.Vars(req), session, userId); err == nil {
 			//the business logic handler return no error, then try to commit the db session
 			if err := session.Commit(); err != nil {
 				SendResponse(res, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -54,5 +69,13 @@ func Wrap(f Handler) http.HandlerFunc {
 			session.Rollback()
 			SendResponse(res, statusCode, map[string]string{"error": err.Error()})
 		}
+	}
+}
+
+//do nothing and provide injection of database object only
+//normally it is used by public endpoint
+func Plain(f PlainHandler) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		f(res, req, mux.Vars(req), db)
 	}
 }
