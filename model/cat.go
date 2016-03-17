@@ -8,8 +8,8 @@ type Cat struct {
 	Name   string `json:"name"`
 	Gender string `json:"gender" validate:"required,enum=MALE/FEMALE"`
 
-	CreateTime time.Time `xorm:"created" json:"createTime"`
-	UpdateTime time.Time `xorm:"updated" json:"updateTime"`
+	CreateTime time.Time `xorm:"created" json:"createTime" validate:"zerotime"`
+	UpdateTime time.Time `xorm:"updated" json:"updateTime" validate:"zerotime"`
 }
 
 func (c Cat) TableName() string {
