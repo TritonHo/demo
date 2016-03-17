@@ -14,7 +14,7 @@ Step 2: Setup the privilege in the database.
 		psql -h <machine_name> -U demo_admin demo_db -f setup_db.sql
 
 
-Step 3: Create the table and foreign Key in the database.
+Step 3: Create the table in the database.
 
 	Run the following command:
 		psql -h <machine_name> -U demo_admin demo_db -f create_table.sql
