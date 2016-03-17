@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"demo/lib/httputil"
@@ -11,26 +10,16 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-var errNotFound = errors.New("The record is not found.")
-
 func CatGetOne(r *http.Request, urlValues map[string]string, session *xorm.Session, userId string) (int, error, interface{}) {
 	//create the object and get the Id from the URL
 	var cat model.Cat
 	cat.Id = urlValues[`catId`]
 
 	//load the object data from the database
-	found, err := session.Where(`id = ? and user_id = ?`, cat.Id, userId).Get(&cat)
+	statusCode, err := getRecordWithUserId(&cat, cat.Id, userId, session)
 
 	//output the object, or any error
-	if err != nil {
-		return http.StatusInternalServerError, err, nil
-	} else {
-		if found == false {
-			return http.StatusNotFound, errNotFound, nil
-		} else {
-			return http.StatusOK, nil, cat
-		}
-	}
+	return statusCode, err, cat
 }
 
 func CatGetAll(r *http.Request, urlValues map[string]string, session *xorm.Session, userId string) (int, error, interface{}) {
@@ -59,25 +48,11 @@ func CatUpdate(r *http.Request, urlValues map[string]string, session *xorm.Sessi
 		return http.StatusBadRequest, err, nil
 	}
 
-	//convert the columnName map into string slice
-	columnNames := []string{}
-	for k, _ := range dbUpdateFields {
-		columnNames = append(columnNames, k)
-	}
-
 	//perform the update to the database
-	affected, err := session.Where("id = ? and user_id = ?", id, userId).Cols(columnNames...).Update(&cat)
+	statusCode, err := updateRecordWithUserId(&cat, dbUpdateFields, cat.Id, userId, session)
 
 	//output the result
-	if err != nil {
-		return http.StatusInternalServerError, err, nil
-	} else {
-		if affected == 0 {
-			return http.StatusNotFound, errNotFound, nil
-		} else {
-			return http.StatusNoContent, nil, nil
-		}
-	}
+	return statusCode, err, nil
 }
 
 func CatCreate(r *http.Request, urlValues map[string]string, session *xorm.Session, userId string) (int, error, interface{}) {
@@ -92,7 +67,7 @@ func CatCreate(r *http.Request, urlValues map[string]string, session *xorm.Sessi
 	cat.UserId = userId
 
 	//perform the create to the database
-	_, err := session.Insert(&cat)
+	statusCode, err := createRecord(&cat, session)
 
 	//output the result
 	if err != nil {
@@ -106,16 +81,8 @@ func CatDelete(r *http.Request, urlValues map[string]string, session *xorm.Sessi
 	id := urlValues[`catId`]
 
 	//perform the delete to the database
-	affected, err := session.Where(`id = ? and user_id = ?`, id, userId).Delete(new(model.Cat))
+	statusCode, err := deleteRecordWithUserId(new(model.Cat), id, userId, session)
 
 	//output the result
-	if err != nil {
-		return http.StatusInternalServerError, err, nil
-	} else {
-		if affected == 0 {
-			return http.StatusNotFound, errNotFound, nil
-		} else {
-			return http.StatusNoContent, nil, nil
-		}
-	}
+	return statusCode, err, nil
 }
