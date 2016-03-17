@@ -1,7 +1,7 @@
 package handler
 
 import (
-	//	"log"
+	"errors"
 	"net/http"
 
 	"demo/lib/auth"
@@ -55,5 +55,72 @@ func UserCreate(w http.ResponseWriter, r *http.Request, urlValues map[string]str
 		//allow CORS
 		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
 		middleware.SendResponse(w, http.StatusOK, map[string]string{"userId": user.Id})
+	}
+}
+
+func UserUpdate(r *http.Request, urlValues map[string]string, session *xorm.Session, userId string) (int, error, interface{}) {
+	id := urlValues[`userId`]
+	if id != userId {
+		return http.StatusForbidden, errors.New("Updating others account is forbidden"), nil
+	}
+
+	input := struct {
+		model.User       `xorm:"extends"`
+		Password         *string `xorm:"-" json:"password" validate:"omitempty,min=1"`
+		OriginalPassword *string `xorm:"-" json:"originalPassword" validate:"omitempty,min=1"`
+	}{}
+
+	//perform the input binding
+	dbUpdateFields, _, err := httputil.BindForUpdate(r, &input)
+	//bind the input
+	if err != nil {
+		return http.StatusBadRequest, err, nil
+	}
+	if input.Password != nil {
+		//if user changes the password, he must provide the original password
+		if input.OriginalPassword == nil {
+			return http.StatusForbidden, errors.New("Please provide the original password"), nil
+		} else {
+			//get the user record from database, and ensure the original password is correct
+			user := model.User{}
+			if found, err := session.Id(userId).Get(&user); !found {
+				return http.StatusNotFound, errNotFound, nil
+			} else {
+				if err != nil {
+					return http.StatusInternalServerError, err, nil
+				}
+				if bcrypt.CompareHashAndPassword([]byte(user.PasswordDigest), []byte(*input.OriginalPassword)) != nil {
+					return http.StatusForbidden, errors.New(`The original password is invalid`), nil
+				}
+			}
+
+			//generate the bcrypt hash with the new password
+			if digest, err := bcrypt.GenerateFromPassword([]byte(*input.Password), bcrypt.DefaultCost); err != nil {
+				return http.StatusInternalServerError, err, nil
+			} else {
+				input.PasswordDigest = string(digest)
+				dbUpdateFields[`password_digest`] = true
+			}
+		}
+	}
+
+	//convert the columnName map into string slice
+	columnNames := []string{}
+	for k, _ := range dbUpdateFields {
+		columnNames = append(columnNames, k)
+	}
+
+	//perform the update to the database
+	affected, err := session.Id(userId).Cols(columnNames...).Update(&input)
+
+	//output the result
+	if err != nil {
+		return http.StatusInternalServerError, err, nil
+	} else {
+		if affected == 0 {
+			return http.StatusNotFound, errNotFound, nil
+		} else {
+			return http.StatusNoContent, nil, nil
+		}
 	}
 }
