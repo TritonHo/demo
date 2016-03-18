@@ -2,11 +2,44 @@
 
 It is a tutorial project to let people understand the backend framework step-by-step.
 
+From phase1 to phase11, you will see know a CRUD endpoint is refactored from 250 lines to only 80 lines.
+Also, you will learn modern coding skills, such as struct tag(~=Java annotation), reflection, middleware.
+
 這是一個教學用專案，讓你一步一步理解backend framework的基本結構。
+從第一版到第十一版，你將會看到一個250行的CRUD endpoint，被改寫成只有80行。
+而且，你將會學習到現在編程技巧，例如：struct tag（大約等同Java annotation），reflection和middleware。
+
 
 ## Contents
 
-[To be done]
+| Branch | Description |
+| -----------|--------|
+| phase1 | Demonstrate the codes written by novice developer. No attention to code reusability decreases maintainability and productivity. | 
+| phase2 | Introduce of mux library. The routing information is centralized in main.go. | 
+| phase3 | Remove hardcoded database username and password in source code. Introduces dependency injection of database object. | 
+| phase4 | Introduce ORM. | 
+| phase5 | Introduce input binder. Also, demonstrates the power(and pain) of reflection. | 
+| phase6 | Introduce input validator. | 
+| phase7 | Introduce middleware to handle http output. | 
+| phase8 | Introduce database transaction manager. Remove of global database object in handler. | 
+| phase9 | Add user model into the system. Introduce jwt authorization in middleware. | 
+| phase10 | Wrap up repetitive code in CRUD handler | 
+| phase11 | Introduce 3rd party middleware. Make the system become production-ready. | 
+
+
+| 分支 | 說明 |
+| -----------|--------|
+| phase1 | 一個菜鳥所寫的程式碼。沒有著重程式重用性，讓程式變得難以維護，也降低人們的生產力。 | 
+| phase2 | 引入mux程式庫。Routing資料現在全集中在main.go。 | 
+| phase3 | 刪掉在程式碼中hardcoded的資料庫用戶名字和密碼。引入資料庫物件的dependency injection。 | 
+| phase4 | 引入ORM. | 
+| phase5 | 引入輸入處理器，也說明reflection的強大（和痛苦）。 | 
+| phase6 | 引入輸入檢查器。 | 
+| phase7 | 引入中間件來負責HTTP輸出。 | 
+| phase8 | 引入資料庫交易管理者。刪掉在handler的全域資料庫物件。 | 
+| phase9 | 加入用戶物件到系統。在中間件層加入jwt身份驗證 | 
+| phase10 | 把重複性程式碼變成獨立程序| 
+| phase11 | 引入第三方套件，讓系統質素到達能上線級別。 | 
 
 ## Getting Started
 
