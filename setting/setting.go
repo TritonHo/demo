@@ -19,4 +19,6 @@ const (
 
 	//measured in minute, the lifetime of the issued jwt token
 	JWT_TOKEN_LIFETIME string = `JWT_TOKEN_LIFETIME`
+
+	DEFAULT_RECORD_PER_PAGE string = `DEFAULT_RECORD_PER_PAGE`
 )

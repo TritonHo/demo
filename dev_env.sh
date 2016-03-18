@@ -11,3 +11,5 @@ export JWT_OLD_RSA_KEY_LOCATION=''
 
 #two hours
 export JWT_TOKEN_LIFETIME=120
+
+export DEFAULT_RECORD_PER_PAGE=50

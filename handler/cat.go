@@ -23,23 +23,17 @@ func CatGetOne(r *http.Request, urlValues map[string]string, session *xorm.Sessi
 }
 
 func CatGetAll(r *http.Request, urlValues map[string]string, session *xorm.Session, userId string) (int, error, interface{}) {
-	//create the object slice
-	cats := []model.Cat{}
+	//get the input criteria
+	startIndex, limit := getPagingInput(r)
 
 	//load the object data from the database
-	err := session.Where(`user_id = ?`, userId).Find(&cats)
-
-	if err != nil {
-		return http.StatusInternalServerError, err, nil
-	}
+	statusCode, err, output := getAllRecordWithUserId(new(model.Cat), startIndex, limit, userId, session)
 
 	//output the result
-	return http.StatusOK, nil, cats
+	return statusCode, err, output
 }
 
 func CatUpdate(r *http.Request, urlValues map[string]string, session *xorm.Session, userId string) (int, error, interface{}) {
-	id := urlValues[`catId`]
-
 	//perform the input binding
 	cat := model.Cat{}
 	dbUpdateFields, _, err := httputil.BindForUpdate(r, &cat)
@@ -47,6 +41,7 @@ func CatUpdate(r *http.Request, urlValues map[string]string, session *xorm.Sessi
 	if err != nil {
 		return http.StatusBadRequest, err, nil
 	}
+	cat.Id = urlValues[`catId`]
 
 	//perform the update to the database
 	statusCode, err := updateRecordWithUserId(&cat, dbUpdateFields, cat.Id, userId, session)
@@ -71,9 +66,9 @@ func CatCreate(r *http.Request, urlValues map[string]string, session *xorm.Sessi
 
 	//output the result
 	if err != nil {
-		return http.StatusInternalServerError, err, nil
+		return statusCode, err, nil
 	} else {
-		return http.StatusOK, nil, map[string]string{"Id": cat.Id}
+		return statusCode, nil, map[string]string{"Id": cat.Id}
 	}
 }
 
