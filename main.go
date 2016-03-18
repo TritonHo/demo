@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"runtime"
 	"strconv"
 	"time"
@@ -16,11 +15,13 @@ import (
 	"demo/lib/middleware"
 	"demo/setting"
 
+	"github.com/codegangsta/negroni"
 	jwt "github.com/dgrijalva/jwt-go"
 	xormCore "github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"gopkg.in/tylerb/graceful.v1"
 )
 
 func main() {
@@ -43,13 +44,12 @@ func main() {
 	router.HandleFunc("/v1/cats/{catId:"+uuidRegexp+"}", middleware.Wrap(handler.CatDelete)).Methods("DELETE")
 	router.HandleFunc("/v1/cats/", middleware.Wrap(handler.CatCreate)).Methods("POST")
 
-	http.Handle("/", router)
-	s := &http.Server{
-		Addr:         ":8080",
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-	log.Fatal(s.ListenAndServe())
+	//add auto recovery, access log, graceful shutdown to all handler
+	recovery := negroni.NewRecovery()
+	recovery.PrintStack = false //should not expose system error stack to the public
+	n := negroni.New(recovery, negroni.NewLogger())
+	n.UseHandler(router)
+	graceful.Run(":8080", 1*time.Minute, n)
 }
 
 // init the various object and inject the database object to the modules
