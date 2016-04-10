@@ -69,7 +69,7 @@ In following step, the Go compiler will be stored in your home directory.
 3. Open ~/.bashrc add following lines in the bottom<br />
 	export PATH=$PATH:<home_directory>/go-compiler/bin <br />
 	export GOROOT=<home_directory>/go-compiler <br />
-	export GOPATH=/home/tritonho/go <br />
+	export GOPATH=<home_directory>/go <br />
 4. restart your terminal
 5. Run: go version <br />
 	If your compiler installed correctly, you will see something like "go version go1.6 linux/amd64"
