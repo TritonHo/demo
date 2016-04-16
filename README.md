@@ -67,9 +67,9 @@ In following step, the Go compiler will be stored in your home directory.
 2. Create the a folder to store all go source code:<br />
 	mkdir ~/go
 3. Open ~/.bashrc add following lines in the bottom<br />
-	export PATH=$PATH:<home_directory>/go-compiler/bin <br />
-	export GOROOT=<home_directory>/go-compiler <br />
-	export GOPATH=<home_directory>/go <br />
+	export PATH=$PATH:[home_directory]/go-compiler/bin <br />
+	export GOROOT=[home_directory]/go-compiler <br />
+	export GOPATH=[home_directory]/go <br />
 4. restart your terminal
 5. Run: go version <br />
 	If your compiler installed correctly, you will see something like "go version go1.6 linux/amd64"
@@ -82,9 +82,9 @@ In following step, the Go compiler will be stored in your home directory.
 2. 建立資料夾，用來存放所有的原始碼：<br />
 	mkdir ~/go
 3. 打開 ~/.bashrc，把以下內容加到最底：<br />
-	export PATH=$PATH:<home_directory>/go-compiler/bin <br />
-	export GOROOT=<home_directory>/go-compiler<br />
-	export GOPATH=<home_directory>/go<br />
+	export PATH=$PATH:[home_directory]/go-compiler/bin <br />
+	export GOROOT=[home_directory]/go-compiler<br />
+	export GOPATH=[home_directory]/go<br />
 4. 重開你的terminal
 5. 執行: go version<br />
 	如果你的Go編譯器正確設定，你應該會看到"go version go1.6 linux/amd64"
