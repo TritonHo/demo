@@ -177,7 +177,8 @@ func catCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//generate the primary key for the cat
-	cat.Id = uuid.NewV4().String()
+	u,_ := uuid.NewV4()
+	cat.Id = u.String()
 
 	//perform the create to the database
 	_, err := db.Exec(`insert into cats(id, name, gender) values ($1, $2, $3)`, cat.Id, cat.Name, cat.Gender)
